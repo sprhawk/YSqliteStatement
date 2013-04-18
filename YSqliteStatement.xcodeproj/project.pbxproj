@@ -10,6 +10,7 @@
 		439E1336171FD2B9006CA769 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 439E1335171FD2B9006CA769 /* Foundation.framework */; };
 		439E133B171FD2B9006CA769 /* YSqliteStatement.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 439E133A171FD2B9006CA769 /* YSqliteStatement.h */; };
 		439E133D171FD2B9006CA769 /* YSqliteStatement.m in Sources */ = {isa = PBXBuildFile; fileRef = 439E133C171FD2B9006CA769 /* YSqliteStatement.m */; };
+		439E1345171FDA04006CA769 /* ysqlite.m in Sources */ = {isa = PBXBuildFile; fileRef = 439E1344171FDA04006CA769 /* ysqlite.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +32,8 @@
 		439E1339171FD2B9006CA769 /* YSqliteStatement-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "YSqliteStatement-Prefix.pch"; sourceTree = "<group>"; };
 		439E133A171FD2B9006CA769 /* YSqliteStatement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YSqliteStatement.h; sourceTree = "<group>"; };
 		439E133C171FD2B9006CA769 /* YSqliteStatement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YSqliteStatement.m; sourceTree = "<group>"; };
+		439E1343171FDA04006CA769 /* ysqlite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ysqlite.h; sourceTree = "<group>"; };
+		439E1344171FDA04006CA769 /* ysqlite.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ysqlite.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +76,8 @@
 		439E1337171FD2B9006CA769 /* YSqliteStatement */ = {
 			isa = PBXGroup;
 			children = (
+				439E1343171FDA04006CA769 /* ysqlite.h */,
+				439E1344171FDA04006CA769 /* ysqlite.m */,
 				439E133A171FD2B9006CA769 /* YSqliteStatement.h */,
 				439E133C171FD2B9006CA769 /* YSqliteStatement.m */,
 				439E1338171FD2B9006CA769 /* Supporting Files */,
@@ -140,6 +145,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				439E133D171FD2B9006CA769 /* YSqliteStatement.m in Sources */,
+				439E1345171FDA04006CA769 /* ysqlite.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
