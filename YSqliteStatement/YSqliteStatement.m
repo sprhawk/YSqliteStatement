@@ -33,10 +33,6 @@
 #import "ysqlite.h"
 #import <ytoolkit/ymacros.h>
 
-NSString * const YSqliteStatementException = @"YSqliteStatementException";
-
-#define MakeYSqliteStatementException(_reason, _userInfo) [NSException exceptionWithName:YSqliteStatementException reason:_reason userInfo:_userInfo]
-#define ThrowYSqliteStatementException(reason, userInfo) @throw MakeYSqliteStatementException(reason, userInfo)
 
 
 @interface YSqliteStatement ()
@@ -54,14 +50,32 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 
 + (id)statementWithSql:(NSString *)sql ysqlite:(YSqlite *)ysqlite
 {
-    id stat = [[[self class] alloc] initWithSql:sql ysqlite:ysqlite];
-    return stat;
+    id stmt = [[[self class] alloc] initWithSql:sql ysqlite:ysqlite];
+    return stmt;
 }
 
 + (id)statementWithYSqlite:(YSqlite *)ysqlite
 {
-    id stat = [[[self class] alloc] initWithYSqlite:ysqlite];
-    return stat;
+    id stmt = [[[self class] alloc] initWithYSqlite:ysqlite];
+    return stmt;
+}
+
+
++ (id)statementWithURL:(NSURL *)url encoding:(NSStringEncoding)encoding ysqlite:(YSqlite *)ysqlite
+{
+    NSError * error = nil;
+    NSString * sql = [[NSString alloc] initWithContentsOfURL:url encoding:encoding error:&error];
+    return [[[self class] alloc] initWithSql:sql ysqlite:ysqlite];
+}
+
++ (id)statementWithResource:(NSString *)name extension:(NSString *)extension bundle:(NSBundle *)bnd ysqlite:(YSqlite *)ysqlite
+{
+    NSBundle * bundle = bnd;
+    if (!bundle) {
+        bundle = [NSBundle mainBundle];
+    }
+    NSURL * url = [bundle URLForResource:name withExtension:extension];
+    return [self statementWithURL:url encoding:NSUTF8StringEncoding ysqlite:ysqlite];
 }
 
 - (id)initWithSql:(NSString *)sql ysqlite:(YSqlite *)ysqlite
@@ -88,6 +102,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
     }
     return self;
 }
+
 
 - (BOOL)prepareSQL:(NSString *)sql
 {
@@ -118,7 +133,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             self.status = YSqliteStatmentStatusPrepared;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -133,7 +149,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             self.status = YSqliteStatmentStatusPrepared;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -141,9 +158,18 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 
 - (BOOL)execute
 {
-    BOOL executed = NO;
     [self prepare];
     if ([self isPrepared]) {
+        [self reset];
+        return [self step];
+    }
+    return NO;
+}
+
+- (BOOL)step
+{
+    BOOL executed = NO;
+    if ([self isPrepared] || [self hasRow]) {
         int ret = sqlite3_step(_sqlite_stmt);
         if (SQLITE_DONE == ret) {
             executed = YES;
@@ -155,7 +181,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             self.status = YSqliteStatmentStatusHasRow;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -178,20 +205,12 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
                 _sqlite_stmt = NULL;
             }
             else {
-                [self logError];
+                NSError * error = [self lastError];
+                YLOG(@"sqlite3:%@", [error localizedDescription]);
                 self.status = YSqliteStatemntStatusError;
             }
         }
     }
-}
-
-- (void)logError
-{
-    if (self.ysqlite.sqlite) {
-        NSError * error = [self lastError];
-        YLOG(@"sqlite3:%@", [error localizedDescription]);
-    }
-    self.error = nil;
 }
 
 - (NSError *)lastError
@@ -230,7 +249,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
     }
     int index = sqlite3_bind_parameter_index(_sqlite_stmt, name);
     if (!index) {
-        [self logError];
+        NSError * error = [self lastError];
+        YLOG(@"sqlite3:%@", [error localizedDescription]);
         ThrowYSqliteStatementException(@"No bound name", nil);
     }
     return index;
@@ -255,7 +275,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             bound = YES;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -280,7 +301,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             bound = YES;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -305,7 +327,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             bound = YES;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -330,7 +353,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             bound = YES;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -356,7 +380,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             bound = YES;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -382,7 +407,8 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
             bound = YES;
         }
         else {
-            [self logError];
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -439,7 +465,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (NSString *)columnNameAtIndex:(int)index
 {
     if (![self hasRow]) {
-        @throw NSGenericException;
+        ThrowYSqliteStatementNoRowException(nil, nil);
     }
     const char * name = sqlite3_column_name(_sqlite_stmt, index);
     return [NSString stringWithUTF8String:name];
@@ -448,7 +474,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (int)intValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        @throw NSGenericException;
+        ThrowYSqliteStatementNoRowException(nil, nil);
     }
     return sqlite3_column_int(_sqlite_stmt, index);
 }
@@ -456,15 +482,25 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (double)doubleValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        @throw NSGenericException;
+        ThrowYSqliteStatementNoRowException(nil, nil);
     }
     return sqlite3_column_double(_sqlite_stmt, index);
+}
+
+- (NSString *)textValueAtIndex:(int)index
+{
+    id value = [self valueAtIndex:index];
+    if (YIS_INSTANCE_OF(value, NSString)) {
+        return value;
+    }
+    ThrowYSqliteStatementWrongColumnTypeException(nil, nil);
+    return nil;
 }
 
 - (id)valueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        @throw NSGenericException;
+        ThrowYSqliteStatementNoRowException(nil, nil);
     }
     int type = sqlite3_column_type(_sqlite_stmt, index);
     id returnedValue = nil;
@@ -513,7 +549,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (int)columnCount
 {
     if (![self hasRow]) {
-        @throw NSGenericException;
+        ThrowYSqliteStatementNoRowException(nil, nil);
     }
     return sqlite3_column_count(_sqlite_stmt);
 }

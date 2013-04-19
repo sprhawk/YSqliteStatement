@@ -260,6 +260,9 @@ NSString * const YSqliteException = @"YSqliteException";
     if (ret) {
         version = [stmt intValueAtIndex:0];
     }
+    else {
+        ThrowYSqliteException(@"User Version Wrong", nil);
+    }
     return version;
 }
 

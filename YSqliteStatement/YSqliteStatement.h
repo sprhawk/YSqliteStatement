@@ -32,6 +32,11 @@
 #import <Foundation/Foundation.h>
 #import <sqlite3.h>
 
+#define MakeYSqliteStatementException(_name, _reason, _userInfo) [NSException exceptionWithName:@"YSqliteStatement"@#_name"Exception" reason:_reason userInfo:_userInfo]
+#define ThrowYSqliteStatementException(reason, userInfo) @throw MakeYSqliteStatementException(Normal, reason, userInfo)
+#define ThrowYSqliteStatementWrongColumnTypeException(reason, userInfo) @throw MakeYSqliteStatementException(WrongColumnType, reason, userInfo)
+#define ThrowYSqliteStatementNoRowException(reason, userInfo) @throw MakeYSqliteStatementException(NoRow, reason, userInfo)
+
 @class YSqlite;
 
 typedef enum YSqliteStatmentStatus
@@ -57,6 +62,8 @@ typedef enum YSqliteStatmentStatus
 
 + (id)statementWithSql:(NSString *)sql ysqlite:(YSqlite *)ysqlite;
 + (id)statementWithYSqlite:(YSqlite *)ysqlite;
++ (id)statementWithURL:(NSURL *)url encoding:(NSStringEncoding)encoding ysqlite:(YSqlite *)ysqlite;
++ (id)statementWithResource:(NSString *)name extension:(NSString *)extension bundle:(NSBundle *)bnd ysqlite:(YSqlite *)ysqlite;
 
 - (id)initWithSql:(NSString *)sql ysqlite:(YSqlite *)ysqlite;
 - (id)initWithYSqlite:(YSqlite *)ysqlite;
@@ -67,6 +74,7 @@ typedef enum YSqliteStatmentStatus
 - (BOOL)isPrepared;
 - (BOOL)isFinished;
 - (BOOL)hasRow;
+- (BOOL)step;
 - (void)reset;
 - (BOOL)bindInt:(int)value index:(int)index;
 - (BOOL)bindInt:(int)value key:(NSString *)key;
@@ -92,4 +100,5 @@ typedef enum YSqliteStatmentStatus
 - (double)doubleValueAtIndex:(int)index;
 - (int)intValueAtIndex:(int)index;
 - (NSString *)columnNameAtIndex:(int)index;
+- (NSString *)textValueAtIndex:(int)index;
 @end
