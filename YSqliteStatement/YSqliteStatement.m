@@ -1,13 +1,37 @@
 //
 //  YSqliteStatement.m
-//  Nikita
+//  YSqliteStatement
 //
-//  Created by YANG HONGBO on 2013-1-22.
-//  Copyright (c) 2013年 YANG HONGBO. All rights reserved.
 //
+//Copyright (c) 2013, Hongbo Yang (hongbo@yang.me)
+//All rights reserved.
+//
+//1. Redistribution and use in source and binary forms, with or without modification, are permitted
+//provided that the following conditions are met:
+//
+//2. Redistributions of source code must retain the above copyright notice, this list of conditions
+//and
+//the following disclaimer.
+//
+//3. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+//and the following disclaimer in the documentation and/or other materials provided with the
+//distribution.
+//
+//Neither the name of the Hongbo Yang nor the names of its contributors may be used to endorse or
+//promote products derived from this software without specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+//IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+//FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+//CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+//DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+//IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+//OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #import "YSqliteStatement.h"
 #import "ysqlite.h"
+#import <ytoolkit/ymacros.h>
 
 NSString * const YSqliteStatementException = @"YSqliteStatementException";
 
@@ -164,10 +188,21 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (void)logError
 {
     if (self.ysqlite.sqlite) {
-        const char * errmsg = sqlite3_errmsg(self.ysqlite.sqlite);
-        YLOG(@"sqlite3:%s", errmsg);
+        NSError * error = [self lastError];
+        YLOG(@"sqlite3:%@", [error localizedDescription]);
     }
     self.error = nil;
+}
+
+- (NSError *)lastError
+{
+    const char * errmsg = sqlite3_errmsg(self.ysqlite.sqlite);
+    NSString * description = [NSString stringWithUTF8String:errmsg];
+    NSDictionary * userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                               description, NSLocalizedDescriptionKey, nil];
+                               
+    NSError * error = [NSError errorWithDomain:@"YSqliteError" code:0 userInfo:userInfo];
+    return error;
 }
 
 - (BOOL)hasRow
@@ -204,10 +239,10 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (BOOL)bindTimestamp:(NSDate *)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindTimestamp:value column:index];
+    return [self bindTimestamp:value index:index];
 }
 
-- (BOOL)bindTimestamp:(NSDate *)value column:(int)column
+- (BOOL)bindTimestamp:(NSDate *)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
@@ -215,7 +250,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
     }
     if ([self isPrepared]) {
         NSInteger timestamp = (NSInteger)[value timeIntervalSince1970];
-        int ret = sqlite3_bind_int(_sqlite_stmt, column, timestamp);
+        int ret = sqlite3_bind_int(_sqlite_stmt, index, timestamp);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -230,17 +265,17 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (BOOL)bindInt:(int)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindInt:value column:index];
+    return [self bindInt:value index:index];
 }
 
-- (BOOL)bindInt:(int)value column:(int)column
+- (BOOL)bindInt:(int)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
         [self prepare];
     }
     if ([self isPrepared]) {
-        int ret = sqlite3_bind_int(_sqlite_stmt, column, value);
+        int ret = sqlite3_bind_int(_sqlite_stmt, index, value);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -255,17 +290,17 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (BOOL)bindInt64:(sqlite3_int64)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindInt64:value column:index];
+    return [self bindInt64:value index:index];
 }
 
-- (BOOL)bindInt64:(sqlite3_int64)value column:(int)column
+- (BOOL)bindInt64:(sqlite3_int64)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
         [self prepare];
     }
     if ([self isPrepared]) {
-        int ret = sqlite3_bind_int64(_sqlite_stmt, column, value);
+        int ret = sqlite3_bind_int64(_sqlite_stmt, index, value);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -280,17 +315,17 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (BOOL)bindDouble:(double)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindDouble:value column:index];
+    return [self bindDouble:value index:index];
 }
 
-- (BOOL)bindDouble:(double)value column:(int)column
+- (BOOL)bindDouble:(double)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
         [self prepare];
     }
     if ([self isPrepared]) {
-        int ret = sqlite3_bind_double(_sqlite_stmt, column, value);
+        int ret = sqlite3_bind_double(_sqlite_stmt, index, value);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -305,10 +340,10 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (BOOL)bindText:(NSString *)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindText:value column:index];
+    return [self bindText:value index:index];
 }
 
-- (BOOL)bindText:(NSString *)value column:(int)column
+- (BOOL)bindText:(NSString *)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
@@ -316,7 +351,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
     }
     if ([self isPrepared]) {
         const char * text = [value cStringUsingEncoding:NSUTF8StringEncoding];
-        int ret = sqlite3_bind_text(_sqlite_stmt, column, text, -1, SQLITE_TRANSIENT);
+        int ret = sqlite3_bind_text(_sqlite_stmt, index, text, -1, SQLITE_TRANSIENT);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -331,10 +366,10 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
 - (BOOL)bindBlob:(NSData *)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindBlob:value column:index];
+    return [self bindBlob:value index:index];
 }
 
-- (BOOL)bindBlob:(NSData *)value column:(int)column
+- (BOOL)bindBlob:(NSData *)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
@@ -342,7 +377,7 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
     }
     if ([self isPrepared]) {
         const void * data = [value bytes];
-        int ret = sqlite3_bind_text(_sqlite_stmt, column, data, [value length], SQLITE_TRANSIENT);
+        int ret = sqlite3_bind_text(_sqlite_stmt, index, data, [value length], SQLITE_TRANSIENT);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -493,5 +528,6 @@ NSString * const YSqliteStatementException = @"YSqliteStatementException";
     }
     return result;
 };
+
 
 @end
