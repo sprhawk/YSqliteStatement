@@ -168,6 +168,7 @@
 
 - (BOOL)step
 {
+    [self prepare];
     BOOL executed = NO;
     if ([self isPrepared] || [self hasRow]) {
         int ret = sqlite3_step(_sqlite_stmt);

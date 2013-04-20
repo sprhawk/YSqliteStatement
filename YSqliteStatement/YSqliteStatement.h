@@ -35,7 +35,7 @@
 #define MakeYSqliteStatementException(_name, _reason, _userInfo) [NSException exceptionWithName:@"YSqliteStatement"@#_name"Exception" reason:_reason userInfo:_userInfo]
 #define ThrowYSqliteStatementException(reason, userInfo) @throw MakeYSqliteStatementException(Normal, reason, userInfo)
 #define ThrowYSqliteStatementWrongColumnTypeException(reason, userInfo) @throw MakeYSqliteStatementException(WrongColumnType, reason, userInfo)
-#define ThrowYSqliteStatementNoRowException(reason, userInfo) @throw MakeYSqliteStatementException(NoRow, reason, userInfo)
+#define ThrowYSqliteStatementNoRowException(reason, userInfo) {YLOG(@"");@throw MakeYSqliteStatementException(NoRow, reason, userInfo);}
 
 @class YSqlite;
 
