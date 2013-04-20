@@ -48,6 +48,14 @@ NSString * const YSqliteException = @"YSqliteException";
 @end
 
 @implementation YSqlite
+
+- (YSqlite *)forkDB
+{
+    YSqlite * s = [[YSqlite alloc] initWithURL:self.url];
+    [s openDB];
+    return s;
+}
+
 - (id)initWithURL:(NSURL *)url
 {
     static dispatch_once_t onceToken;

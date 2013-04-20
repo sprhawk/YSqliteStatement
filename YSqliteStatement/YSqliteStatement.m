@@ -174,8 +174,8 @@
         int ret = sqlite3_step(_sqlite_stmt);
         if (SQLITE_DONE == ret) {
             executed = YES;
-            //self.lastInsertRowid = sqlite3_last_insert_rowid(self.ysqlite.sqlite);
             self.status = YSqliteStatmentStatusDone;
+            [self reset];
         }
         else if (SQLITE_ROW == ret) {
             executed = YES;
@@ -185,6 +185,7 @@
             NSError * error = [self lastError];
             YLOG(@"sqlite3:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
+            [self reset];
         }
     }
     return executed;
@@ -257,13 +258,13 @@
     return index;
 }
 
-- (BOOL)bindTimestamp:(NSDate *)value key:(NSString *)key
+- (BOOL)bindDate:(NSDate *)value key:(NSString *)key
 {
     int index = [self indexForKey:key];
-    return [self bindTimestamp:value index:index];
+    return [self bindDate:value index:index];
 }
 
-- (BOOL)bindTimestamp:(NSDate *)value index:(int)index
+- (BOOL)bindDate:(NSDate *)value index:(int)index
 {
     BOOL bound = NO;
     if (![self isPrepared]) {
@@ -494,8 +495,17 @@
     if (YIS_INSTANCE_OF(value, NSString)) {
         return value;
     }
+    else if (value == [NSNull null]) {
+        return @"";
+    }
     ThrowYSqliteStatementWrongColumnTypeException(nil, nil);
     return nil;
+}
+
+- (NSDate *)dateAtIndex:(int)index
+{
+    NSUInteger time = (NSUInteger)[self intValueAtIndex:index];
+    return [NSDate dateWithTimeIntervalSince1970:(NSTimeInterval)time];
 }
 
 - (id)valueAtIndex:(int)index
@@ -566,5 +576,8 @@
     return result;
 };
 
-
+- (void)clearBindings
+{
+    sqlite3_clear_bindings(_sqlite_stmt);
+}
 @end

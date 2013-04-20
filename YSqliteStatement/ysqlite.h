@@ -38,6 +38,7 @@
 + (BOOL)loadBatchStatementsAtURL:(NSURL *)url execution:(BOOL (^)(NSString * sqlstmt))execution error:(NSError * __autoreleasing *)error;
 
 - (id)initWithURL:(NSURL *)url;
+- (YSqlite *)forkDB;
 - (BOOL)openDB;
 - (BOOL)openOrCreateWithBlock:(void (^)(YSqlite * ysqlite))initializationBlock;
 - (void)closeDB;
