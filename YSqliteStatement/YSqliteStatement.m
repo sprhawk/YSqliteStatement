@@ -65,6 +65,9 @@
 {
     NSError * error = nil;
     NSString * sql = [[NSString alloc] initWithContentsOfURL:url encoding:encoding error:&error];
+    if (nil == sql) {
+        @throw [NSException exceptionWithName:@"YSqliteStatementException" reason:@"no file in URL" userInfo:nil];
+    }
     return [[[self class] alloc] initWithSql:sql ysqlite:ysqlite];
 }
 
@@ -192,6 +195,7 @@
                     YLOG(@"YSqliteStatement:step:retry timed out!");
                     break;
                 }
+                YLOG(@"sleeping");
             }
             else {
                 NSError * error = [self lastError];
