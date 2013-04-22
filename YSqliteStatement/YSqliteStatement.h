@@ -59,6 +59,7 @@ typedef enum YSqliteStatmentStatus
 @property (nonatomic, assign, readonly) YSqliteStatmentStatus status;
 @property (nonatomic, strong, readonly) NSError * error;
 @property (nonatomic, assign, readonly) sqlite3_int64 lastInsertRowid;
+@property (nonatomic, assign, readwrite) NSUInteger maxRetryCount;
 
 + (id)statementWithSql:(NSString *)sql ysqlite:(YSqlite *)ysqlite;
 + (id)statementWithYSqlite:(YSqlite *)ysqlite;

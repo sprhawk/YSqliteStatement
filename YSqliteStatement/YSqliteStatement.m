@@ -33,7 +33,7 @@
 #import "ysqlite.h"
 #import <ytoolkit/ymacros.h>
 
-
+#define DEFAULT_RETRYCOUNT 0
 
 @interface YSqliteStatement ()
 {
@@ -87,6 +87,7 @@
     if (self) {
         self.sql = sql;
         self.ysqlite = ysqlite;
+        self.maxRetryCount = DEFAULT_RETRYCOUNT;
     }
     return self;
 }
@@ -125,8 +126,9 @@
 {
     if (![self isPrepared]) {
         const char * zSql = [self.sql cStringUsingEncoding:NSUTF8StringEncoding];
+        size_t len = strlen(zSql) + 1;
         const char * zTail = NULL;
-        int ret = sqlite3_prepare_v2(self.ysqlite.sqlite, zSql, [self.sql length], &_sqlite_stmt, &zTail);
+        int ret = sqlite3_prepare_v2(self.ysqlite.sqlite, zSql, len, &_sqlite_stmt, &zTail);
         if (zTail) {
         }
         if (SQLITE_OK == ret) {
@@ -134,7 +136,7 @@
         }
         else {
             NSError * error = [self lastError];
-            YLOG(@"sqlite3:%@", [error localizedDescription]);
+            YLOG(@"sqlite3:prepare_v2:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -150,7 +152,7 @@
         }
         else {
             NSError * error = [self lastError];
-            YLOG(@"sqlite3:%@", [error localizedDescription]);
+            YLOG(@"sqlite3:reset:%@", [error localizedDescription]);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -161,7 +163,8 @@
     [self prepare];
     if ([self isPrepared]) {
         [self reset];
-        return [self step];
+        BOOL ret = [self step];
+        return ret;
     }
     return NO;
 }
@@ -169,24 +172,34 @@
 - (BOOL)step
 {
     [self prepare];
-    BOOL executed = NO;
+    BOOL executed = YES;
+    int retryCount = 0;
     if ([self isPrepared] || [self hasRow]) {
-        int ret = sqlite3_step(_sqlite_stmt);
-        if (SQLITE_DONE == ret) {
-            executed = YES;
-            self.status = YSqliteStatmentStatusDone;
-            [self reset];
-        }
-        else if (SQLITE_ROW == ret) {
-            executed = YES;
-            self.status = YSqliteStatmentStatusHasRow;
-        }
-        else {
-            NSError * error = [self lastError];
-            YLOG(@"sqlite3:%@", [error localizedDescription]);
-            self.status = YSqliteStatemntStatusError;
-            [self reset];
-        }
+        do {
+            int ret = sqlite3_step(_sqlite_stmt);
+            if (SQLITE_DONE == ret) {
+                self.status = YSqliteStatmentStatusDone;
+                [self reset];
+            }
+            else if (SQLITE_ROW == ret) {
+                self.status = YSqliteStatmentStatusHasRow;
+            }
+            else if (SQLITE_BUSY == ret || SQLITE_LOCKED == ret) {
+                executed = NO;
+                retryCount ++;
+                [NSThread sleepForTimeInterval:0.003];
+                if (self.maxRetryCount && retryCount > self.maxRetryCount) {
+                    YLOG(@"YSqliteStatement:step:retry timed out!");
+                    break;
+                }
+            }
+            else {
+                NSError * error = [self lastError];
+                YLOG(@"sqlite3:step:%@", [error localizedDescription]);
+                self.status = YSqliteStatemntStatusError;
+                [self reset];
+            }
+        }while (!executed);
     }
     return executed;
 }

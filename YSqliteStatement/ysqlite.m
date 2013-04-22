@@ -198,30 +198,31 @@ NSString * const YSqliteException = @"YSqliteException";
             NSMutableString * buffer = [NSMutableString stringWithCapacity:bufferSize * 2];
             BOOL dataIsFinished = NO;
             NSData * data = nil;
+            
             do {
-                NSRange rng = {NSNotFound, 0};
-                do {
-                    data = [handle readDataOfLength:bufferSize];
-                    if (0 == data.length) {
-                        dataIsFinished = YES;
-                        break;
-                    }
+                data = [handle readDataOfLength:bufferSize];
+                if (0 == data.length || data.length < bufferSize) {
+                    dataIsFinished = YES;
+                }
+
+                if(data.length) {
                     NSString * string = [[NSString alloc] initWithBytes:data.bytes length:data.length encoding:NSUTF8StringEncoding];
                     [buffer appendString:string];
+                }
+                NSRange rng = {NSNotFound, 0};
+                while(buffer.length) { //not for complicated situation like there is ';' at the end of the comment '--' line ...
                     rng = [buffer rangeOfString:@";" ];
-                    if (NSNotFound != rng.location) {
-                        break;
-                    }
-                } while (data.length);
-                
-                if (buffer.length) {
-                    NSString * stmt = nil;
                     if (NSNotFound == rng.location) {
-                        rng.location = 0;
-                        rng.length = buffer.length;
+                        if (dataIsFinished) {
+                            rng.location = [buffer length] - 1;
+                            rng.length = 1;
+                        }
+                        else {
+                            break;
+                        }
                     }
-                    
-                    stmt = [buffer substringToIndex:rng.location+1];
+                    NSString * stmt;
+                    stmt = [buffer substringToIndex:rng.location + 1];
                     stmt = [stmt stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
                     if (stmt.length) {
                         BOOL cont = execution(stmt);
@@ -234,8 +235,7 @@ NSString * const YSqliteException = @"YSqliteException";
                     NSString * newstring = [buffer stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
                     [buffer setString:newstring];
                 }
-                
-            }while(!dataIsFinished);
+            } while (!dataIsFinished);
         }
         [handle closeFile];
     }
