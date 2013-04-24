@@ -498,6 +498,14 @@
     return sqlite3_column_int(_sqlite_stmt, index);
 }
 
+- (sqlite3_int64)int64ValueAtIndex:(int)index
+{
+    if (![self hasRow]) {
+        ThrowYSqliteStatementNoRowException(nil, nil);
+    }
+    return sqlite3_column_int64(_sqlite_stmt, index);
+}
+
 - (double)doubleValueAtIndex:(int)index
 {
     if (![self hasRow]) {
@@ -522,6 +530,9 @@
 - (NSDate *)dateAtIndex:(int)index
 {
     NSUInteger time = (NSUInteger)[self intValueAtIndex:index];
+    if (0 == time) {
+        return nil;
+    }
     return [NSDate dateWithTimeIntervalSince1970:(NSTimeInterval)time];
 }
 

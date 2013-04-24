@@ -102,6 +102,7 @@ typedef enum YSqliteStatmentStatus
 - (id)valueAtIndex:(int)index;
 - (double)doubleValueAtIndex:(int)index;
 - (int)intValueAtIndex:(int)index;
+- (sqlite3_int64)int64ValueAtIndex:(int)index;
 - (NSDate *)dateAtIndex:(int)index;
 - (NSString *)columnNameAtIndex:(int)index;
 - (NSString *)textValueAtIndex:(int)index;

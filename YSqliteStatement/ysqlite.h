@@ -43,6 +43,8 @@
 - (BOOL)openOrCreateWithBlock:(void (^)(YSqlite * ysqlite))initializationBlock;
 - (void)closeDB;
 - (BOOL)executeSql:(NSString *)sql withError:(NSError * __autoreleasing *)error;
+
+//not for complicated situation like there is ';' at the end of the comment '--' line ...
 - (BOOL)loadBatchStatementsAtURL:(NSURL *)url error:(NSError * __autoreleasing *)error;
 - (YSqliteStatement *)statementWithSql:(NSString *)sql;
 - (sqlite3 *)sqlite;
