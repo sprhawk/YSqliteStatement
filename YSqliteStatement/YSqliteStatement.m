@@ -208,10 +208,9 @@
     return executed;
 }
 
-- (sqlite3_int64)updateLastInsertRowid
+- (sqlite3_int64)lastInsertRowid
 {
-    self.lastInsertRowid = sqlite3_last_insert_rowid(self.ysqlite.sqlite);
-    return self.lastInsertRowid;
+    return sqlite3_last_insert_rowid(self.ysqlite.sqlite);
 }
 
 - (void)finish
