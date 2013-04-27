@@ -287,8 +287,8 @@
         [self prepare];
     }
     if ([self isPrepared]) {
-        NSInteger timestamp = (NSInteger)[value timeIntervalSince1970];
-        int ret = sqlite3_bind_int(_sqlite_stmt, index, timestamp);
+        long long timestamp = (unsigned long long)[value timeIntervalSince1970];
+        int ret = sqlite3_bind_int64(_sqlite_stmt, index, timestamp);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
