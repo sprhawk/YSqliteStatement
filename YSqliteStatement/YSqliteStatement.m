@@ -435,50 +435,86 @@
 
 
 
-- (BOOL)bindValue:(id)value key:(NSString *)key type:(NSString *)type
+- (BOOL)bindValue:(id)value key:(NSString *)key
+{
+    int index = [self indexForKey:key];
+    return [self bindValue:value index:index];
+    
+}
+
+- (BOOL)bindValue:(id)value index:(NSUInteger)index
 {
     BOOL bound = NO;
-    if ([type isEqualToString:@"int"]) {
-        if (YIS_INSTANCE_OF(value, NSNumber)) {
-            [self bindInt:[value integerValue] key:key];
+    if (YIS_INSTANCE_OF(value, NSNumber)) {
+        if (0 == strcmp([value objCType], @encode(int))) {
+            bound =[self bindInt:[value integerValue] index:index];
         }
-        else {
-            @throw NSInvalidArgumentException;
+        else if (0 == strcmp([value objCType], @encode(unsigned int))) {
+            bound =[self bindInt:(int)[value unsignedIntegerValue] index:index];
         }
+        else if (0 == strcmp([value objCType], @encode(long))) {
+            bound =[self bindInt64:[value longValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(long long))) {
+            bound =[self bindInt64:[value longLongValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(long))) {
+            bound =[self bindInt64:[value longValue] index:index];
+        }
+        if (0 == strcmp([value objCType], @encode(unsigned long long))) {
+            bound =[self bindInt64:(long long)[value unsignedLongLongValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(BOOL))) {
+            bound =[self bindInt:([value boolValue] ? 1 : 0) index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(float))) {
+            bound =[self bindDouble:[value floatValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(double))) {
+            bound =[self bindDouble:[value floatValue] index:index];
+        }
+    }
+    else if (YIS_INSTANCE_OF(value, NSString)) {
+        bound =[self bindText:value index:index];
+    }
+    else if (YIS_INSTANCE_OF(value, NSDate)) {
+        bound =[self bindDate:value index:index];
+    }
+    else if (YIS_INSTANCE_OF(value, NSData)) {
+        bound =[self bindBlob:value index:index];
     }
     return bound;
 }
 
-
-- (BOOL)bindValuesAndKeysAndTypes:(id)firstValue, ...
-{
-    id eachObject;
-    va_list argumentList;
-    BOOL bound = NO;
-    if (firstValue)
-    {
-        va_start(argumentList, firstValue); // Start scanning for arguments after firstObject.
-        id key = va_arg(argumentList, id);
-        id type = va_arg(argumentList, id);
-        if (nil == key || nil == type) {
-            @throw NSInvalidArgumentException;
-        }
-        bound = [self bindValue:firstValue key:key type:type];
-        
-        while (bound && (eachObject = va_arg(argumentList, id))) {
-            key = va_arg(argumentList, id);
-            type = va_arg(argumentList, id);
-            if (key && type) {
-                bound = [self bindValue:eachObject key:key type:type];
-            }
-            else {
-                @throw NSInvalidArgumentException;
-            }
-        }
-        va_end(argumentList);
-    }
-    return bound;
-}
+//- (BOOL)bindValuesAndKeysAndTypes:(id)firstValue, ...
+//{
+//    id eachObject;
+//    va_list argumentList;
+//    BOOL bound = NO;
+//    if (firstValue)
+//    {
+//        va_start(argumentList, firstValue); // Start scanning for arguments after firstObject.
+//        id key = va_arg(argumentList, id);
+//        id type = va_arg(argumentList, id);
+//        if (nil == key || nil == type) {
+//            @throw NSInvalidArgumentException;
+//        }
+//        bound = [self bindValue:firstValue key:key type:type];
+//        
+//        while (bound && (eachObject = va_arg(argumentList, id))) {
+//            key = va_arg(argumentList, id);
+//            type = va_arg(argumentList, id);
+//            if (key && type) {
+//                bound = [self bindValue:eachObject key:key type:type];
+//            }
+//            else {
+//                @throw NSInvalidArgumentException;
+//            }
+//        }
+//        va_end(argumentList);
+//    }
+//    return bound;
+//}
 
 - (NSString *)columnNameAtIndex:(int)index
 {
@@ -520,7 +556,7 @@
         return value;
     }
     else if (value == [NSNull null]) {
-        return @"";
+        return nil;
     }
     ThrowYSqliteStatementWrongColumnTypeException(nil, nil);
     return nil;

@@ -87,9 +87,9 @@ typedef enum YSqliteStatmentStatus
 - (BOOL)bindBlob:(NSData *)value key:(NSString *)key;
 - (BOOL)bindText:(NSString *)value index:(int)index;
 - (BOOL)bindText:(NSString *)value key:(NSString *)key;
-- (BOOL)bindValue:(id)value key:(NSString *)key type:(NSString *)type;
-- (BOOL)bindValuesAndKeysAndTypes:(id)firstValue, ...;
-
+- (BOOL)bindValue:(id)value key:(NSString *)key;
+//- (BOOL)bindValuesAndKeysAndTypes:(id)firstValue, ...;
+- (BOOL)bindValue:(id)value index:(NSUInteger)index;
 - (BOOL)bindDate:(NSDate *)value index:(int)index;
 - (BOOL)bindDate:(NSDate *)value key:(NSString *)key;
 
