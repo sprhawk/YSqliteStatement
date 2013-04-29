@@ -643,4 +643,10 @@
 {
     sqlite3_clear_bindings(_sqlite_stmt);
 }
+
+- (int)numberOfRowsChanged
+{
+    return [self.ysqlite numberOfRowsChanged];
+}
+
 @end

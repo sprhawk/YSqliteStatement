@@ -288,5 +288,10 @@ NSString * const YSqliteException = @"YSqliteException";
     }
     return ret;
 }
+
+- (int)numberOfRowsChanged
+{
+    return sqlite3_changes(self.sqlite);
+}
 @end
 

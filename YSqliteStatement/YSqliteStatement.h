@@ -106,4 +106,5 @@ typedef enum YSqliteStatmentStatus
 - (NSDate *)dateAtIndex:(int)index;
 - (NSString *)columnNameAtIndex:(int)index;
 - (NSString *)textValueAtIndex:(int)index;
+- (int)numberOfRowsChanged;
 @end
