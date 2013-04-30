@@ -195,7 +195,7 @@
                     YLOG(@"YSqliteStatement:step:retry timed out!");
                     break;
                 }
-                YLOG(@"sleeping");
+                YLOG(@"sleeping:%@", self.sql);
             }
             else {
                 NSError * error = [self lastError];
