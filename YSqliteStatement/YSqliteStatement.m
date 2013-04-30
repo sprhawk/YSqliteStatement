@@ -139,7 +139,7 @@
         }
         else {
             NSError * error = [self lastError];
-            YLOG(@"sqlite3:prepare_v2:%@", [error localizedDescription]);
+            YLOG(@"sqlite3:prepare_v2:%@(%@)", [error localizedDescription], self.sql);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -199,7 +199,7 @@
             }
             else {
                 NSError * error = [self lastError];
-                YLOG(@"sqlite3:step:%@", [error localizedDescription]);
+                YLOG(@"sqlite3:step:%@(%@)", [error localizedDescription], self.sql);
                 self.status = YSqliteStatemntStatusError;
                 [self reset];
             }
