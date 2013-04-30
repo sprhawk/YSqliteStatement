@@ -232,8 +232,9 @@ NSString * const YSqliteException = @"YSqliteException";
                         }
                     }
                     [buffer deleteCharactersInRange:NSMakeRange(0, rng.location + 1)];
-                    NSString * newstring = [buffer stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    [buffer setString:newstring];
+//                    NSString * newstring = [buffer stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+//                    [buffer setString:newstring];
+                    //removing spaces occurs more problem;
                 }
             } while (!dataIsFinished);
         }
