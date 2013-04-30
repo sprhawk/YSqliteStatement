@@ -420,7 +420,7 @@
     }
     if ([self isPrepared]) {
         const void * data = [value bytes];
-        int ret = sqlite3_bind_text(_sqlite_stmt, index, data, [value length], SQLITE_TRANSIENT);
+        int ret = sqlite3_bind_blob(_sqlite_stmt, index, data, [value length], SQLITE_TRANSIENT);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -433,7 +433,31 @@
     return bound;
 }
 
+- (BOOL)bindNullKey:(NSString *)key
+{
+    int index = [self indexForKey:key];
+    return [self bindNullIndex:index];
+}
 
+- (BOOL)bindNullIndex:(int)index
+{
+    BOOL bound = NO;
+    if (![self isPrepared]) {
+        [self prepare];
+    }
+    if ([self isPrepared]) {
+        int ret = sqlite3_bind_null(_sqlite_stmt, index);
+        if (SQLITE_OK == ret) {
+            bound = YES;
+        }
+        else {
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
+            self.status = YSqliteStatemntStatusError;
+        }
+    }
+    return bound;
+}
 
 - (BOOL)bindValue:(id)value key:(NSString *)key
 {
@@ -481,7 +505,10 @@
         bound =[self bindDate:value index:index];
     }
     else if (YIS_INSTANCE_OF(value, NSData)) {
-        bound =[self bindBlob:value index:index];
+        bound = [self bindBlob:value index:index];
+    }
+    else if (YIS_INSTANCE_OF(value, NSNull) || nil == value) {
+        bound = [self bindNullIndex:index];
     }
     return bound;
 }
