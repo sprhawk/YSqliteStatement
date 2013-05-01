@@ -181,10 +181,12 @@
         do {
             int ret = sqlite3_step(_sqlite_stmt);
             if (SQLITE_DONE == ret) {
+                executed = YES;
                 self.status = YSqliteStatmentStatusDone;
                 [self reset];
             }
             else if (SQLITE_ROW == ret) {
+                executed = YES;
                 self.status = YSqliteStatmentStatusHasRow;
             }
             else if (SQLITE_BUSY == ret || SQLITE_LOCKED == ret) {
@@ -202,6 +204,7 @@
                 YLOG(@"sqlite3:step:%@(%@)", [error localizedDescription], self.sql);
                 self.status = YSqliteStatemntStatusError;
                 [self reset];
+                executed = YES;
             }
         }while (!executed);
     }
