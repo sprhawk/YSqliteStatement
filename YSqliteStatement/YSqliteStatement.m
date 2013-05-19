@@ -271,8 +271,9 @@
     int index = sqlite3_bind_parameter_index(_sqlite_stmt, name);
     if (!index) {
         NSError * error = [self lastError];
-        YLOG(@"sqlite3:%@", [error localizedDescription]);
-        ThrowYSqliteStatementException(@"No bound name", nil);
+        YLOG(@"sqlite3:%@)", [error localizedDescription]);
+        NSString * exc = [NSString stringWithFormat:@"No bound name:%@ (%@)", [error localizedDescription], self.sql];
+        ThrowYSqliteStatementException(exc, nil);
     }
     return index;
 }
