@@ -31,7 +31,7 @@
 
 #import "YSqliteStatement.h"
 #import "ysqlite.h"
-#import <ytoolkit/ymacros.h>
+#import "ymacros.h"
 
 #define DEFAULT_RETRYCOUNT 0
 

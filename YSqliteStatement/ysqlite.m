@@ -31,7 +31,7 @@
 
 #import "ysqlite.h"
 #import "YSqliteStatement.h"
-#import <ytoolkit/ymacros.h>
+#import "ymacros.h"
 
 NSString * const YSqliteException = @"YSqliteException";
 
