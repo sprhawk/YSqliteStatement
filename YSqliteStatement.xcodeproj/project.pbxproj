@@ -208,6 +208,7 @@
 		439E1341171FD2B9006CA769 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				DSTROOT = /tmp/YSqliteStatement.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "YSqliteStatement/YSqliteStatement-Prefix.pch";
@@ -225,6 +226,7 @@
 		439E1342171FD2B9006CA769 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				DSTROOT = /tmp/YSqliteStatement.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "YSqliteStatement/YSqliteStatement-Prefix.pch";
