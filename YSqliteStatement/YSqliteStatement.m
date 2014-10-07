@@ -31,7 +31,7 @@
 
 #import "YSqliteStatement.h"
 #import "ysqlite.h"
-#import <ytoolkit/ymacros.h>
+#import "ymacros.h"
 
 #define DEFAULT_RETRYCOUNT 0
 
@@ -139,7 +139,7 @@
         }
         else {
             NSError * error = [self lastError];
-            YLOG(@"sqlite3:prepare_v2:%@", [error localizedDescription]);
+            YLOG(@"sqlite3:prepare_v2:%@(%@)", [error localizedDescription], self.sql);
             self.status = YSqliteStatemntStatusError;
         }
     }
@@ -181,10 +181,12 @@
         do {
             int ret = sqlite3_step(_sqlite_stmt);
             if (SQLITE_DONE == ret) {
+                executed = YES;
                 self.status = YSqliteStatmentStatusDone;
                 [self reset];
             }
             else if (SQLITE_ROW == ret) {
+                executed = YES;
                 self.status = YSqliteStatmentStatusHasRow;
             }
             else if (SQLITE_BUSY == ret || SQLITE_LOCKED == ret) {
@@ -195,13 +197,14 @@
                     YLOG(@"YSqliteStatement:step:retry timed out!");
                     break;
                 }
-                YLOG(@"sleeping");
+                YLOG(@"sleeping:%@", self.sql);
             }
             else {
                 NSError * error = [self lastError];
-                YLOG(@"sqlite3:step:%@", [error localizedDescription]);
+                YLOG(@"sqlite3:step:%@(%@)", [error localizedDescription], self.sql);
                 self.status = YSqliteStatemntStatusError;
                 [self reset];
+                executed = YES;
             }
         }while (!executed);
     }
@@ -268,8 +271,9 @@
     int index = sqlite3_bind_parameter_index(_sqlite_stmt, name);
     if (!index) {
         NSError * error = [self lastError];
-        YLOG(@"sqlite3:%@", [error localizedDescription]);
-        ThrowYSqliteStatementException(@"No bound name", nil);
+        YLOG(@"sqlite3:%@)", [error localizedDescription]);
+        NSString * exc = [NSString stringWithFormat:@"No bound name:%@ (%@)", [error localizedDescription], self.sql];
+        ThrowYSqliteStatementException(exc, nil);
     }
     return index;
 }
@@ -287,8 +291,8 @@
         [self prepare];
     }
     if ([self isPrepared]) {
-        NSInteger timestamp = (NSInteger)[value timeIntervalSince1970];
-        int ret = sqlite3_bind_int(_sqlite_stmt, index, timestamp);
+        long long timestamp = (unsigned long long)[value timeIntervalSince1970];
+        int ret = sqlite3_bind_int64(_sqlite_stmt, index, timestamp);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -420,7 +424,7 @@
     }
     if ([self isPrepared]) {
         const void * data = [value bytes];
-        int ret = sqlite3_bind_text(_sqlite_stmt, index, data, [value length], SQLITE_TRANSIENT);
+        int ret = sqlite3_bind_blob(_sqlite_stmt, index, data, [value length], SQLITE_TRANSIENT);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -433,52 +437,115 @@
     return bound;
 }
 
+- (BOOL)bindNullKey:(NSString *)key
+{
+    int index = [self indexForKey:key];
+    return [self bindNullIndex:index];
+}
 
-
-- (BOOL)bindValue:(id)value key:(NSString *)key type:(NSString *)type
+- (BOOL)bindNullIndex:(int)index
 {
     BOOL bound = NO;
-    if ([type isEqualToString:@"int"]) {
-        if (YIS_INSTANCE_OF(value, NSNumber)) {
-            [self bindInt:[value integerValue] key:key];
+    if (![self isPrepared]) {
+        [self prepare];
+    }
+    if ([self isPrepared]) {
+        int ret = sqlite3_bind_null(_sqlite_stmt, index);
+        if (SQLITE_OK == ret) {
+            bound = YES;
         }
         else {
-            @throw NSInvalidArgumentException;
+            NSError * error = [self lastError];
+            YLOG(@"sqlite3:%@", [error localizedDescription]);
+            self.status = YSqliteStatemntStatusError;
         }
     }
     return bound;
 }
 
-
-- (BOOL)bindValuesAndKeysAndTypes:(id)firstValue, ...
+- (BOOL)bindValue:(id)value key:(NSString *)key
 {
-    id eachObject;
-    va_list argumentList;
+    int index = [self indexForKey:key];
+    return [self bindValue:value index:index];
+    
+}
+
+- (BOOL)bindValue:(id)value index:(NSUInteger)index
+{
     BOOL bound = NO;
-    if (firstValue)
-    {
-        va_start(argumentList, firstValue); // Start scanning for arguments after firstObject.
-        id key = va_arg(argumentList, id);
-        id type = va_arg(argumentList, id);
-        if (nil == key || nil == type) {
-            @throw NSInvalidArgumentException;
+    if (YIS_INSTANCE_OF(value, NSNumber)) {
+        if (0 == strcmp([value objCType], @encode(int))) {
+            bound =[self bindInt:[value integerValue] index:index];
         }
-        bound = [self bindValue:firstValue key:key type:type];
-        
-        while (bound && (eachObject = va_arg(argumentList, id))) {
-            key = va_arg(argumentList, id);
-            type = va_arg(argumentList, id);
-            if (key && type) {
-                bound = [self bindValue:eachObject key:key type:type];
-            }
-            else {
-                @throw NSInvalidArgumentException;
-            }
+        else if (0 == strcmp([value objCType], @encode(unsigned int))) {
+            bound =[self bindInt:(int)[value unsignedIntegerValue] index:index];
         }
-        va_end(argumentList);
+        else if (0 == strcmp([value objCType], @encode(long))) {
+            bound =[self bindInt64:[value longValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(long long))) {
+            bound =[self bindInt64:[value longLongValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(long))) {
+            bound =[self bindInt64:[value longValue] index:index];
+        }
+        if (0 == strcmp([value objCType], @encode(unsigned long long))) {
+            bound =[self bindInt64:(long long)[value unsignedLongLongValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(BOOL))) {
+            bound =[self bindInt:([value boolValue] ? 1 : 0) index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(float))) {
+            bound =[self bindDouble:[value floatValue] index:index];
+        }
+        else if (0 == strcmp([value objCType], @encode(double))) {
+            bound =[self bindDouble:[value floatValue] index:index];
+        }
+    }
+    else if (YIS_INSTANCE_OF(value, NSString)) {
+        bound =[self bindText:value index:index];
+    }
+    else if (YIS_INSTANCE_OF(value, NSDate)) {
+        bound =[self bindDate:value index:index];
+    }
+    else if (YIS_INSTANCE_OF(value, NSData)) {
+        bound = [self bindBlob:value index:index];
+    }
+    else if (YIS_INSTANCE_OF(value, NSNull) || nil == value) {
+        bound = [self bindNullIndex:index];
     }
     return bound;
 }
+
+//- (BOOL)bindValuesAndKeysAndTypes:(id)firstValue, ...
+//{
+//    id eachObject;
+//    va_list argumentList;
+//    BOOL bound = NO;
+//    if (firstValue)
+//    {
+//        va_start(argumentList, firstValue); // Start scanning for arguments after firstObject.
+//        id key = va_arg(argumentList, id);
+//        id type = va_arg(argumentList, id);
+//        if (nil == key || nil == type) {
+//            @throw NSInvalidArgumentException;
+//        }
+//        bound = [self bindValue:firstValue key:key type:type];
+//        
+//        while (bound && (eachObject = va_arg(argumentList, id))) {
+//            key = va_arg(argumentList, id);
+//            type = va_arg(argumentList, id);
+//            if (key && type) {
+//                bound = [self bindValue:eachObject key:key type:type];
+//            }
+//            else {
+//                @throw NSInvalidArgumentException;
+//            }
+//        }
+//        va_end(argumentList);
+//    }
+//    return bound;
+//}
 
 - (NSString *)columnNameAtIndex:(int)index
 {
@@ -520,7 +587,7 @@
         return value;
     }
     else if (value == [NSNull null]) {
-        return @"";
+        return nil;
     }
     ThrowYSqliteStatementWrongColumnTypeException(nil, nil);
     return nil;
@@ -607,4 +674,10 @@
 {
     sqlite3_clear_bindings(_sqlite_stmt);
 }
+
+- (int)numberOfRowsChanged
+{
+    return [self.ysqlite numberOfRowsChanged];
+}
+
 @end

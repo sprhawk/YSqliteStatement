@@ -31,7 +31,7 @@
 
 #import "ysqlite.h"
 #import "YSqliteStatement.h"
-#import <ytoolkit/ymacros.h>
+#import "ymacros.h"
 
 NSString * const YSqliteException = @"YSqliteException";
 
@@ -119,12 +119,23 @@ NSString * const YSqliteException = @"YSqliteException";
         NSString * path = [self.url path];
         const char * dbpath = [path cStringUsingEncoding:NSUTF8StringEncoding];
         
-        int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_URI;
+        int flags = SQLITE_OPEN_READWRITE;
         
         NSFileManager * mgr = [[NSFileManager alloc] init];
         if (![mgr fileExistsAtPath:[NSString stringWithUTF8String:dbpath]]) {
             flags |= SQLITE_OPEN_CREATE;
+            
+            NSString *directory = [path stringByDeletingLastPathComponent];
+            BOOL isDirectory = NO;
+            if (![mgr fileExistsAtPath:directory isDirectory:&isDirectory] || !isDirectory) {
+                NSError * error = nil;
+                BOOL ret = [mgr createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:&error];
+                if (!ret) {
+                    YLOG(@"create directory failed:%@", directory);
+                }
+            }
         }
+        
         int ret = sqlite3_open_v2(dbpath, &_sqlite3, flags, NULL);
         if (SQLITE_OK != ret) {
             if (_sqlite3) {
@@ -232,8 +243,9 @@ NSString * const YSqliteException = @"YSqliteException";
                         }
                     }
                     [buffer deleteCharactersInRange:NSMakeRange(0, rng.location + 1)];
-                    NSString * newstring = [buffer stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    [buffer setString:newstring];
+//                    NSString * newstring = [buffer stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+//                    [buffer setString:newstring];
+                    //removing spaces occurs more problem;
                 }
             } while (!dataIsFinished);
         }
@@ -245,19 +257,48 @@ NSString * const YSqliteException = @"YSqliteException";
 
 - (BOOL)loadBatchStatementsAtURL:(NSURL *)url error:(NSError *__autoreleasing *)error
 {
-    return [[self class] loadBatchStatementsAtURL:url execution:^BOOL(NSString *sqlstmt) {
-        NSError * stmtError = nil;
-        BOOL rslt = [self executeSql:sqlstmt withError:&stmtError];
-        if (!rslt) {
-            if (stmtError) {
-                if (error) {
-                    *error = stmtError;
-                }
+    BOOL finished = YES;
+    NSFileHandle * handle = [NSFileHandle fileHandleForReadingFromURL:url error:error];
+    if (handle) {
+        const NSUInteger bufferSize = 64;
+        NSMutableData *buffer = [NSMutableData dataWithCapacity:bufferSize];
+        
+        BOOL dataIsFinished = NO;
+        do {
+            NSData * data = [handle readDataOfLength:bufferSize];
+            if (0 == data.length || data.length < bufferSize) {
+                dataIsFinished = YES;
             }
-            return NO;
-        }
-        return YES;
-    } error:error];
+            if(data.length) {
+                [buffer appendData:data];
+            }
+            const char * zSql = (const char *)buffer.bytes;
+            sqlite3_stmt *stmt = NULL;
+            const char *pzTail = NULL;
+            int ret = sqlite3_prepare_v2(_sqlite3, zSql, buffer.length, &stmt, &pzTail);
+            if (SQLITE_OK == ret && stmt) {
+                if (pzTail) {
+                    NSUInteger pos = (NSUInteger)(pzTail - zSql);
+                    NSData *tmp = [buffer subdataWithRange:NSMakeRange(pos, buffer.length - pos)];
+                    [buffer setData:tmp];
+                }
+                else {
+                    [buffer setLength:0];
+                }
+                ret = sqlite3_step(stmt);
+                if (SQLITE_DONE == ret) {
+                    
+                }
+                else {
+                    
+                }
+                sqlite3_finalize(stmt);
+            }
+        }while (!dataIsFinished);
+        [handle closeFile];
+    }
+
+    return finished;
 }
 
 - (int)userVersion
@@ -287,6 +328,11 @@ NSString * const YSqliteException = @"YSqliteException";
         }
     }
     return ret;
+}
+
+- (int)numberOfRowsChanged
+{
+    return sqlite3_changes(self.sqlite);
 }
 @end
 

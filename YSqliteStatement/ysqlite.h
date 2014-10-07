@@ -50,5 +50,6 @@
 - (sqlite3 *)sqlite;
 - (BOOL)setUserVersion:(int)version;
 - (int)userVersion;
+- (int)numberOfRowsChanged;
 @end
 
