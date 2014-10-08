@@ -73,6 +73,34 @@ NSString * const YSqliteException = @"YSqliteException";
     return self;
 }
 
+- (instancetype)init
+{
+    [[NSBundle mainBundle] bundleIdentifier];
+    [NSBundle mainBundle];
+    NSArray *array = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+    if (array.count) {
+        NSString *path = array[0];
+        NSFileManager *mgr = [NSFileManager defaultManager];
+        BOOL isDir = NO;
+        path = [path stringByAppendingPathComponent:@"ysqlite"];
+        BOOL exists = [mgr fileExistsAtPath:path isDirectory:&isDir];
+        if (!exists || !isDir) {
+            NSError *error = nil;
+            BOOL ret = [mgr createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&error];
+            if (!ret && error) {
+                NSLog(@"create directory failed:%@", error);
+                self = nil;
+                return self;
+            }
+        }
+        NSURL *url = [NSURL URLWithString:@"ysqlite.db" relativeToURL:[NSURL URLWithString:path]];
+        self = [self initWithURL:url];
+        return self;
+    }
+    self = nil;
+    return self;
+}
+
 - (void)dealloc
 {
     [self closeDB];

@@ -34,6 +34,7 @@
 
 @class YSqliteStatement;
 @interface YSqlite : NSObject
+- (instancetype)init;
 
 + (BOOL)loadBatchStatementsAtURL:(NSURL *)url execution:(BOOL (^)(NSString * sqlstmt))execution error:(NSError * __autoreleasing *)error;
 
