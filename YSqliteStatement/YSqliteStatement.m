@@ -131,7 +131,7 @@
         const char * zSql = [self.sql cStringUsingEncoding:NSUTF8StringEncoding];
         size_t len = strlen(zSql) + 1;
         const char * zTail = NULL;
-        int ret = sqlite3_prepare_v2(self.ysqlite.sqlite, zSql, len, &_sqlite_stmt, &zTail);
+        int ret = sqlite3_prepare_v2(self.ysqlite.sqlite, zSql, (int)len, &_sqlite_stmt, &zTail);
         if (zTail) {
         }
         if (SQLITE_OK == ret) {
@@ -423,7 +423,7 @@
     }
     if ([self isPrepared]) {
         const void * data = [value bytes];
-        int ret = sqlite3_bind_blob(_sqlite_stmt, index, data, [value length], SQLITE_TRANSIENT);
+        int ret = sqlite3_bind_blob(_sqlite_stmt, index, data, (int)[value length], SQLITE_TRANSIENT);
         if (SQLITE_OK == ret) {
             bound = YES;
         }
@@ -469,12 +469,12 @@
     
 }
 
-- (BOOL)bindValue:(id)value index:(NSUInteger)index
+- (BOOL)bindValue:(id)value index:(int)index
 {
     BOOL bound = NO;
     if (YIS_INSTANCE_OF(value, NSNumber)) {
         if (0 == strcmp([value objCType], @encode(int))) {
-            bound =[self bindInt:[value integerValue] index:index];
+            bound =[self bindInt:(int)[value integerValue] index:index];
         }
         else if (0 == strcmp([value objCType], @encode(unsigned int))) {
             bound =[self bindInt:(int)[value unsignedIntegerValue] index:index];

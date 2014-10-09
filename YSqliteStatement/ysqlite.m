@@ -292,6 +292,7 @@ NSString * const YSqliteException = @"YSqliteException";
         NSMutableData *buffer = [NSMutableData dataWithCapacity:bufferSize];
         
         BOOL dataIsFinished = NO;
+        int ret = SQLITE_OK;
         do {
             NSData * data = [handle readDataOfLength:bufferSize];
             if (0 == data.length || data.length < bufferSize) {
@@ -303,7 +304,7 @@ NSString * const YSqliteException = @"YSqliteException";
             const char * zSql = (const char *)buffer.bytes;
             sqlite3_stmt *stmt = NULL;
             const char *pzTail = NULL;
-            int ret = sqlite3_prepare_v2(_sqlite3, zSql, buffer.length, &stmt, &pzTail);
+            ret = sqlite3_prepare_v2(_sqlite3, zSql, (int)buffer.length, &stmt, &pzTail);
             if (SQLITE_OK == ret && stmt) {
                 if (pzTail) {
                     NSUInteger pos = (NSUInteger)(pzTail - zSql);
@@ -324,8 +325,16 @@ NSString * const YSqliteException = @"YSqliteException";
             }
         }while (!dataIsFinished);
         [handle closeFile];
+        
+        if (SQLITE_OK != ret && SQLITE_DONE != ret) {
+            NSError *error = [self lastError];
+            NSString *msg = [error localizedDescription];
+            NSString *filename = [url lastPathComponent];
+            NSString *reason = [NSString stringWithFormat:@"loadBatchStatementsAtURL:%@ (%@)", filename, msg];
+            ThrowYSqliteException(reason, @{@"error": error});
+            return NO;
+        }
     }
-
     return finished;
 }
 
@@ -362,5 +371,17 @@ NSString * const YSqliteException = @"YSqliteException";
 {
     return sqlite3_changes(self.sqlite);
 }
+
+- (NSError *)lastError
+{
+    const char * errmsg = sqlite3_errmsg(self.sqlite);
+    NSString * description = [NSString stringWithUTF8String:errmsg];
+    NSDictionary * userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                               description, NSLocalizedDescriptionKey, nil];
+    
+    NSError * error = [NSError errorWithDomain:@"YSqliteError" code:0 userInfo:userInfo];
+    return error;
+}
+
 @end
 
