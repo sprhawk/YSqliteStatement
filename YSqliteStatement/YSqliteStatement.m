@@ -549,7 +549,8 @@
 - (NSString *)columnNameAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(nil, nil);
+        NSString *reason = [NSString stringWithFormat:@"columnNameAtIndex:%d (sql:%@)", index, self.sql];
+        ThrowYSqliteStatementNoRowException(reason, nil);
     }
     const char * name = sqlite3_column_name(_sqlite_stmt, index);
     return [NSString stringWithUTF8String:name];
@@ -558,7 +559,8 @@
 - (int)intValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(@"int", nil);
+        NSString *reason = [NSString stringWithFormat:@"intValueAtIndex:%d (sql:%@)", index, self.sql];
+        ThrowYSqliteStatementNoRowException(reason, nil);
     }
     return sqlite3_column_int(_sqlite_stmt, index);
 }
@@ -566,7 +568,8 @@
 - (sqlite3_int64)int64ValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(@"int64", nil);
+        NSString *reason = [NSString stringWithFormat:@"int64ValueAtIndex:%d (sql:%@)", index, self.sql];
+        ThrowYSqliteStatementNoRowException(reason, nil);
     }
     return sqlite3_column_int64(_sqlite_stmt, index);
 }
@@ -574,7 +577,8 @@
 - (double)doubleValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(@"double", nil);
+        NSString *reason = [NSString stringWithFormat:@"doubleValueAtIndex:%d (sql:%@)", index, self.sql];
+        ThrowYSqliteStatementNoRowException(reason, nil);
     }
     return sqlite3_column_double(_sqlite_stmt, index);
 }
@@ -588,7 +592,8 @@
     else if (value == [NSNull null]) {
         return nil;
     }
-    ThrowYSqliteStatementWrongColumnTypeException(@"text", nil);
+    NSString *reason = [NSString stringWithFormat:@"textValueAtIndex:%d (sql:%@)", index, self.sql];
+    ThrowYSqliteStatementWrongColumnTypeException(reason, nil);
     return nil;
 }
 
@@ -604,7 +609,8 @@
 - (id)valueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(nil, nil);
+        NSString *reason = [NSString stringWithFormat:@"valueAtIndex:%d (sql:%@)", index, self.sql];
+        ThrowYSqliteStatementNoRowException(reason, nil);
     }
     int type = sqlite3_column_type(_sqlite_stmt, index);
     id returnedValue = nil;
@@ -653,7 +659,8 @@
 - (int)columnCount
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(nil, nil);
+        NSString *reason = [NSString stringWithFormat:@"columnCount (sql:%@)", self.sql];
+        ThrowYSqliteStatementNoRowException(reason, nil);
     }
     return sqlite3_column_count(_sqlite_stmt);
 }
