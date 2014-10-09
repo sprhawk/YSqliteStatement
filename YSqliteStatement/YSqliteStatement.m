@@ -165,7 +165,6 @@
 {
     [self prepare];
     if ([self isPrepared]) {
-        [self reset];
         BOOL ret = [self step];
         return ret;
     }
@@ -271,8 +270,8 @@
     int index = sqlite3_bind_parameter_index(_sqlite_stmt, name);
     if (!index) {
         NSError * error = [self lastError];
-        YLOG(@"sqlite3:%@)", [error localizedDescription]);
-        NSString * exc = [NSString stringWithFormat:@"No bound name:%@ (%@)", [error localizedDescription], self.sql];
+        YLOG(@"sqlite3:%@", [error localizedDescription]);
+        NSString * exc = [NSString stringWithFormat:@"No bound name:%@ (error:%@ %@)", key, [error localizedDescription], self.sql];
         ThrowYSqliteStatementException(exc, nil);
     }
     return index;
@@ -559,7 +558,7 @@
 - (int)intValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(nil, nil);
+        ThrowYSqliteStatementNoRowException(@"int", nil);
     }
     return sqlite3_column_int(_sqlite_stmt, index);
 }
@@ -567,7 +566,7 @@
 - (sqlite3_int64)int64ValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(nil, nil);
+        ThrowYSqliteStatementNoRowException(@"int64", nil);
     }
     return sqlite3_column_int64(_sqlite_stmt, index);
 }
@@ -575,7 +574,7 @@
 - (double)doubleValueAtIndex:(int)index
 {
     if (![self hasRow]) {
-        ThrowYSqliteStatementNoRowException(nil, nil);
+        ThrowYSqliteStatementNoRowException(@"double", nil);
     }
     return sqlite3_column_double(_sqlite_stmt, index);
 }
@@ -589,7 +588,7 @@
     else if (value == [NSNull null]) {
         return nil;
     }
-    ThrowYSqliteStatementWrongColumnTypeException(nil, nil);
+    ThrowYSqliteStatementWrongColumnTypeException(@"text", nil);
     return nil;
 }
 

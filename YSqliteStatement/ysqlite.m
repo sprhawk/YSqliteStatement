@@ -75,8 +75,8 @@ NSString * const YSqliteException = @"YSqliteException";
 
 - (instancetype)init
 {
-    [[NSBundle mainBundle] bundleIdentifier];
-    [NSBundle mainBundle];
+//    [[NSBundle mainBundle] bundleIdentifier];
+//    [NSBundle mainBundle];
     NSArray *array = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
     if (array.count) {
         NSString *path = array[0];
@@ -93,7 +93,7 @@ NSString * const YSqliteException = @"YSqliteException";
                 return self;
             }
         }
-        NSURL *url = [NSURL URLWithString:@"ysqlite.db" relativeToURL:[NSURL URLWithString:path]];
+        NSURL *url = [NSURL fileURLWithPathComponents:@[path, @"ysqlite.db"]];
         self = [self initWithURL:url];
         return self;
     }
